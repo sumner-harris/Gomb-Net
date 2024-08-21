@@ -8,7 +8,8 @@ images_dir='/Users/austin/Desktop/WSSe_dataset/images'
 labels_dir='/Users/austin/Desktop/WSSe_dataset/labels'
 train_loader, val_loader, test_loader = get_dataloaders(images_dir, labels_dir, batch_size = 2, val_split=0.2, test_split=0.1)
 
-save_name = '/Users/austin/Documents/GitHub/GombNet/trained_models/del_later.pth'
+model_names = ['a', 'b', 'c', 'd', 'e']
+save_name_base = '/Users/austin/Documents/GitHub/GombNet/trained_models/WSSe_model_'
 
 # Model Params
 input_channels = 1
@@ -23,12 +24,52 @@ elif torch.cuda.is_available():
 else:
     device = 'cpu'
 
-# Create and train model with CombinatorialGroupLoss
-print('Loading model...')
-model = TwoLeggedUnet(input_channels, num_classes, num_filters, dropout = 0.423)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-loss = GombinatorialLoss(group_size = num_classes//2, loss = 'Dice', epsilon=1e-6, class_weights = None, alpha=1.58)
-print('Training model...')                         
-model, train_loss, val_loss = train_model(model, train_loader, val_loader, n_epochs = 30,
-                                          criterion = loss, optimizer = optimizer, device = device,
-                                          save_name = save_name)
+
+# Function to initialize the weights of the model
+def initialize_model_weights(model, initialization_type):
+    if initialization_type == 'xavier':
+        def init_weights(m):
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    init.zeros_(m.bias)
+    elif initialization_type == 'kaiming':
+        def init_weights(m):
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                init.kaiming_uniform_(m.weight, nonlinearity='relu')
+                if m.bias is not None:
+                    init.zeros_(m.bias)
+    elif initialization_type == 'orthogonal':
+        def init_weights(m):
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                init.orthogonal_(m.weight)
+                if m.bias is not None:
+                    init.zeros_(m.bias)
+    else:
+        raise ValueError(f"Unknown initialization type: {initialization_type}")
+
+    model.apply(init_weights)
+
+# Loop through models and apply different initializations
+initialization_methods = ['xavier', 'kaiming', 'orthogonal', 'xavier', 'kaiming']
+
+
+for model_name, init_method in zip(model_names, initialization_methods):
+    # Create and train model with CombinatorialGroupLoss
+    print(f'Loading model {model_name}...')
+    model = TwoLeggedUnet(input_channels, num_classes, num_filters, dropout = 0.423)
+    initialize_model_weights(model, init_method)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    loss = GombinatorialLoss(group_size = num_classes//2, loss = 'Dice', epsilon=1e-6, class_weights = None, alpha=1.58)
+
+    # Define the unique save name for this model
+    save_name = save_name_base + model_name
+
+    print(f'Training model {model_name}...')                     
+    model, train_loss, val_loss = train_model(model, train_loader, val_loader, n_epochs = 50,
+                                            criterion = loss, optimizer = optimizer, device = device,
+                                            save_name = save_name, save_checkpoints=[10,30,50])
+    
+    print(f'Model {model_name} training complete and saved at {save_name}')
+
+print("All models trained and saved.")

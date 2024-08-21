@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data import random_split
+import torch.nn.init as init
 
 
 class PNGDataset(Dataset):
@@ -69,7 +70,7 @@ def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_spli
     return train_loader, val_loader, test_loader
 
 
-def train_model(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, save_name, save_loss_history = True):
+def train_model(model, train_loader, val_loader, n_epochs, criterion, optimizer, device, save_name, save_loss_history = True, save_checkpoints = None):
     train_loss_history = []
     val_loss_history = []
     best_val_loss = float('inf')
@@ -112,7 +113,7 @@ def train_model(model, train_loader, val_loader, n_epochs, criterion, optimizer,
         print(f"Epoch {epoch+1}/{n_epochs}, Training Loss: {epoch_loss:.4f}, Validation Loss: {val_epoch_loss:.4f}")
 
         if save_loss_history:
-            np.savez(save_name + 'loss_history.npz', train_loss_history=train_loss_history, val_loss_history=val_loss_history)
+            np.savez(save_name + '_loss_history.npz', train_loss_history=train_loss_history, val_loss_history=val_loss_history)
         # Save model and optimizer state if validation loss improved
         if save_name:
             if val_epoch_loss < best_val_loss:
@@ -120,8 +121,15 @@ def train_model(model, train_loader, val_loader, n_epochs, criterion, optimizer,
                 checkpoint = {'model_state_dict': model.state_dict(),
                             'optimizer_state_dict': optimizer.state_dict(),
                             'best_val_loss': best_val_loss}
-                torch.save(checkpoint, save_name)
+                torch.save(checkpoint, str(save_name+ '_best.pth'))
                 print(f"Model saved as validation loss improved to {val_epoch_loss:.4f}")
+        if save_checkpoints:
+            if epoch in save_checkpoints:
+                checkpoint = {'model_state_dict': model.state_dict(),
+                            'optimizer_state_dict': optimizer.state_dict(),
+                            'best_val_loss': best_val_loss}
+                torch.save(checkpoint, str(save_name + f'_checkpoint_{epoch}.pth'))
+                print(f"Model saved as checkpoint at epoch {epoch}")
 
     return model, train_loss_history, val_loss_history
 
