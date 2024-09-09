@@ -49,7 +49,7 @@ class PNGDataset(Dataset):
         return image, labels
 
 
-def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_split=0.1):
+def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_split=0.1, seed=None):
     dataset = PNGDataset(images_dir, labels_dir)
 
     # Split dataset into train, validation, and test sets
@@ -60,7 +60,9 @@ def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_spli
 
     print(f"Train size: {train_size}, Validation size: {val_size}, Test size: {test_size}")
 
-
+    if seed:
+        torch.manual_seed(seed)
+        
     train_dataset, test_dataset, val_dataset = random_split(dataset, [train_size, test_size, val_size])
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
