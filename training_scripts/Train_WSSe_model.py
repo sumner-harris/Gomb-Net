@@ -1,15 +1,18 @@
 import torch
+import sys
+sys.path.append('/Users/austin/Documents/GitHub/Gomb-Net/')
 from GombNet.utils import *
 from GombNet.networks import *
 from GombNet.loss_func import GombinatorialLoss
 
 # Create dataloaders
-images_dir='/Users/austin/Desktop/WSSe_dataset/images'
-labels_dir='/Users/austin/Desktop/WSSe_dataset/labels'
+images_dir='/Users/austin/Desktop/Gomb-Net aux files/WSSe_dataset_8k/images'
+labels_dir='/Users/austin/Desktop/Gomb-Net aux files/WSSe_dataset_8k/labels'
 train_loader, val_loader, test_loader = get_dataloaders(images_dir, labels_dir, batch_size = 2, val_split=0.2, test_split=0.1)
 
-model_names = ['a', 'b', 'c', 'd', 'e']
-save_name_base = '/Users/austin/Documents/GitHub/GombNet/trained_models/WSSe_model_'
+# model_names = ['a', 'b', 'c', 'd', 'e']
+model_names = ['f']
+save_name_base = '/Users/austin/Desktop/Gomb-Net aux files/WSSe_ensemble/WSSe_model_'
 
 # Model Params
 input_channels = 1
@@ -19,6 +22,7 @@ num_filters = [32, 64, 128, 256, 512]
 # Check if a GPU is available and if not, use a CPU
 if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
     device = torch.device('mps') # backend for Apple silicon GPUs
+    print('Using Apple silicon GPU')
 elif torch.cuda.is_available():
     device = 'cuda'
 else:
@@ -57,18 +61,18 @@ initialization_methods = ['xavier', 'kaiming', 'orthogonal', 'xavier', 'kaiming'
 for model_name, init_method in zip(model_names, initialization_methods):
     # Create and train model with CombinatorialGroupLoss
     print(f'Loading model {model_name}...')
-    model = TwoLeggedUnet(input_channels, num_classes, num_filters, dropout = 0.423)
+    model = TwoLeggedUnet(input_channels, num_classes, num_filters, dropout = 0.4) #0.423
     initialize_model_weights(model, init_method)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    loss = GombinatorialLoss(group_size = num_classes//2, loss = 'Dice', epsilon=1e-6, class_weights = None, alpha=1.58)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005) # 0.001
+    loss = GombinatorialLoss(group_size = num_classes//2, loss = 'Dice', epsilon=1e-6, class_weights = None, alpha=2) # 1.58
 
     # Define the unique save name for this model
     save_name = save_name_base + model_name
 
     print(f'Training model {model_name}...')                     
-    model, train_loss, val_loss = train_model(model, train_loader, val_loader, n_epochs = 50,
+    model, train_loss, val_loss = train_model(model, train_loader, val_loader, n_epochs = 100,
                                             criterion = loss, optimizer = optimizer, device = device,
-                                            save_name = save_name, save_checkpoints=[10,30,50])
+                                            save_name = save_name, save_checkpoints=[10,30,50,100])
     
     print(f'Model {model_name} training complete and saved at {save_name}')
 
