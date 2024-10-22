@@ -1,6 +1,6 @@
 # **Gomb-Net**
 ### Revealing atomic identities in bilayer moiré materials
-
+### 2024O Oct 22
 
 Gomb-Net finds atoms, layer-wise, in STEM images of moiré materials
 
