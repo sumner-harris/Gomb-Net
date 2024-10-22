@@ -29,4 +29,5 @@ loss = GombinatorialLoss(group_size = num_classes//2, loss = 'Dice', epsilon=1e-
 print('Training model...')                         
 model, train_loss, val_loss = train_model(model, train_loader, val_loader, n_epochs = 100,
                                           criterion = loss, optimizer = optimizer, device = device,
-                                          save_name = '/Users/austin/Documents/GitHub/GombNet/trained_models/TwoLeggedGraphene256_b.pth')
+                                          save_name = '/Users/austin/Desktop/graphene_models/graphene_model',
+                                          save_checkpoints = [10,30,50])
