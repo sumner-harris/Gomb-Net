@@ -6,13 +6,13 @@ from GombNet.networks import *
 from GombNet.loss_func import GombinatorialLoss
 
 # Create dataloaders
-images_dir='/Users/austin/Desktop/Gomb-Net aux files/WSSe_dataset_8k/images'
-labels_dir='/Users/austin/Desktop/Gomb-Net aux files/WSSe_dataset_8k/labels'
-train_loader, val_loader, test_loader = get_dataloaders(images_dir, labels_dir, batch_size = 2, val_split=0.2, test_split=0.1)
+images_dir='/Users/austin/Desktop/WSSe_dataset_8kb/images'
+labels_dir='/Users/austin/Desktop/WSSe_dataset_8kb/labels'
+train_loader, val_loader, test_loader = get_dataloaders(images_dir, labels_dir, batch_size = 8, val_split=0.2, test_split=0.1, num_workers=0)
 
-# model_names = ['a', 'b', 'c', 'd', 'e']
-model_names = ['f']
-save_name_base = '/Users/austin/Desktop/Gomb-Net aux files/WSSe_ensemble/WSSe_model_'
+# model_names = ['a', 'b', 'c', 'd', 'e', 'f']
+model_names = ['b', 'c', 'd', 'e', 'f']
+save_name_base = '/Users/austin/Desktop/WSSe_ensemble/WSSe_model_'
 
 # Model Params
 input_channels = 1
@@ -27,7 +27,7 @@ elif torch.cuda.is_available():
     device = 'cuda'
 else:
     device = 'cpu'
-
+print(f'Using device: {device}')
 
 # Function to initialize the weights of the model
 def initialize_model_weights(model, initialization_type):
@@ -55,13 +55,14 @@ def initialize_model_weights(model, initialization_type):
     model.apply(init_weights)
 
 # Loop through models and apply different initializations
-initialization_methods = ['xavier', 'kaiming', 'orthogonal', 'xavier', 'kaiming']
+# initialization_methods = ['xavier', 'kaiming', 'orthogonal', 'xavier', 'kaiming', 'orthogonal']
+initialization_methods = ['kaiming', 'orthogonal', 'xavier', 'kaiming', 'orthogonal']
 
 
 for model_name, init_method in zip(model_names, initialization_methods):
     # Create and train model with CombinatorialGroupLoss
     print(f'Loading model {model_name}...')
-    model = TwoLeggedUnet(input_channels, num_classes, num_filters, dropout = 0.4) #0.423
+    model = TwoLeggedUnet(input_channels, num_classes, num_filters, dropout = 0.423)
     initialize_model_weights(model, init_method)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0005) # 0.001
     loss = GombinatorialLoss(group_size = num_classes//2, loss = 'Dice', epsilon=1e-6, class_weights = None, alpha=2) # 1.58

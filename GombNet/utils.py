@@ -39,9 +39,9 @@ class PNGDataset(Dataset):
         labels = np.stack([np.array(label).astype('float32') / 255.0 for label in label_images])
 
         # Apply transformations - don't have any right now
-        if self.transform:
-            image = self.transform(image)
-            label_images = [self.transform(label) for label in label_images]
+        # if self.transform:
+        #     image = self.transform(image)
+        #     label_images = [self.transform(label) for label in label_images]
 
         image = torch.Tensor(image)
         image = torch.unsqueeze(image, 0)
@@ -49,7 +49,7 @@ class PNGDataset(Dataset):
         return image, labels
 
 
-def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_split=0.1, seed=None):
+def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_split=0.1, seed=None, num_workers=2):
     dataset = PNGDataset(images_dir, labels_dir)
 
     # Split dataset into train, validation, and test sets
@@ -60,14 +60,19 @@ def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_spli
 
     print(f"Train size: {train_size}, Validation size: {val_size}, Test size: {test_size}")
 
+    if num_workers == 0:
+        persistent_workers = False
+    else:
+        persistent_workers = True
+
     if seed:
         torch.manual_seed(seed)
         
     train_dataset, test_dataset, val_dataset = random_split(dataset, [train_size, test_size, val_size])
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=persistent_workers)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=persistent_workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=persistent_workers)
 
     return train_loader, val_loader, test_loader
 
