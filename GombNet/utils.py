@@ -49,7 +49,7 @@ class PNGDataset(Dataset):
         return image, labels
 
 
-def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_split=0.1, seed=None, num_workers=2):
+def get_dataloaders(images_dir, labels_dir, batch_size, val_split=0.1, test_split=0.1, seed=None, num_workers=0):
     dataset = PNGDataset(images_dir, labels_dir)
 
     # Split dataset into train, validation, and test sets
